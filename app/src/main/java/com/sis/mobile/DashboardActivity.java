@@ -1,14 +1,17 @@
 package com.sis.mobile;
 
-import androidx.appcompat.app.AppCompatActivity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.TextView;
-import com.google.android.material.card.MaterialCardView;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.cardview.widget.CardView;
 
 public class DashboardActivity extends AppCompatActivity {
-    private TextView tvWelcome, tvEmail;
-    private MaterialCardView cardMyCourses, cardAvailable, cardProfile;
+    TextView tvWelcome;
+    CardView cardProfile, cardMyCourses, cardRequest;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -16,17 +19,20 @@ public class DashboardActivity extends AppCompatActivity {
         setContentView(R.layout.activity_dashboard);
 
         tvWelcome = findViewById(R.id.tvWelcome);
-        tvEmail = findViewById(R.id.tvEmail);
-        cardMyCourses = findViewById(R.id.cardMyCourses);
-        cardAvailable = findViewById(R.id.cardAvailable);
         cardProfile = findViewById(R.id.cardProfile);
+        cardMyCourses = findViewById(R.id.cardMyCourses);
+        cardRequest = findViewById(R.id.cardRequest);
 
-        String email = getSharedPreferences("SIS_PREF", MODE_PRIVATE).getString("EMAIL", "user");
-        tvWelcome.setText("Welcome");
-        tvEmail.setText(email);
+        // get name from SharedPreferences or intent
+        String name = getSharedPreferences("SIS_PREF", MODE_PRIVATE).getString("NAME", null);
+        if (name == null) {
+            name = getIntent().getStringExtra("userName");
+        }
+        if (name == null) name = "Student";
+        tvWelcome.setText("Welcome, " + name + "!");
 
-        cardMyCourses.setOnClickListener(v -> startActivity(new Intent(DashboardActivity.this, MyCoursesActivity.class)));
-        cardAvailable.setOnClickListener(v -> startActivity(new Intent(DashboardActivity.this, AvailableCoursesActivity.class)));
         cardProfile.setOnClickListener(v -> startActivity(new Intent(DashboardActivity.this, ProfileActivity.class)));
+        cardMyCourses.setOnClickListener(v -> startActivity(new Intent(DashboardActivity.this, MyCoursesActivity.class)));
+        cardRequest.setOnClickListener(v -> startActivity(new Intent(DashboardActivity.this, AvailableCoursesActivity.class)));
     }
 }

@@ -1,29 +1,34 @@
 package com.sis.mobile;
 
-import androidx.appcompat.app.AppCompatActivity;
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Patterns;
 import android.view.View;
-import android.widget.Button;
-import android.widget.ProgressBar;
-import android.widget.Toast;
-import com.google.android.material.textfield.TextInputEditText;
-import org.json.JSONObject;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
+import android.widget.*;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import java.util.Arrays;
+import java.util.List;
 
 public class LoginActivity extends AppCompatActivity {
-    private TextInputEditText etEmail, etPassword;
-    private Button btnLogin;
-    private ProgressBar progress;
 
-    // default dev base URL (emulator -> host)
-    private String BASE_URL = "http://10.0.2.2:8080";
+    EditText etEmail, etPassword;
+    Button btnLogin;
+    TextView tvError, tvToggleSignup;
 
-    // toggle mock mode for frontend demo
-    private static final boolean USE_MOCK = true;
+    static class User {
+        String email, password, role, name;
+        int id;
+
+        User(String e, String p, String r, String n, int i) {
+            email = e; password = p; role = r; name = n; id = i;
+        }
+    }
+
+    List<User> dummyUsers = Arrays.asList(
+            new User("student@test.com", "student123", "student", "John Doe", 1),
+            new User("admin@test.com", "admin123", "admin", "Admin User", 2)
+    );
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,75 +38,28 @@ public class LoginActivity extends AppCompatActivity {
         etEmail = findViewById(R.id.etEmail);
         etPassword = findViewById(R.id.etPassword);
         btnLogin = findViewById(R.id.btnLogin);
-        progress = findViewById(R.id.progress);
+        tvError = findViewById(R.id.tvError);
+        tvToggleSignup = findViewById(R.id.tvToggleSignup);
 
-        btnLogin.setOnClickListener(v -> {
-            String email = etEmail.getText() != null ? etEmail.getText().toString().trim() : "";
-            String pass = etPassword.getText() != null ? etPassword.getText().toString() : "";
-            if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-                etEmail.setError("Invalid email");
-                return;
-            }
-            if (pass.isEmpty()) {
-                etPassword.setError("Password required");
-                return;
-            }
-            doLogin(email, pass);
-        });
+        btnLogin.setOnClickListener(v -> handleLogin());
     }
 
-    private void doLogin(String email, String password) {
-        if (USE_MOCK) {
-            progress.setVisibility(View.VISIBLE);
-            new android.os.Handler().postDelayed(() -> {
-                progress.setVisibility(View.GONE);
-                getSharedPreferences("SIS_PREF", MODE_PRIVATE)
-                        .edit()
-                        .putString("TOKEN", "mock-token")
-                        .putString("EMAIL", email)
-                        .apply();
-                startActivity(new Intent(LoginActivity.this, DashboardActivity.class));
-                finish();
-            }, 600);
-            return;
+    private void handleLogin() {
+        String email = etEmail.getText().toString().trim();
+        String pass = etPassword.getText().toString().trim();
+
+        tvError.setVisibility(View.GONE);
+
+        for (User u : dummyUsers) {
+            if (u.email.equals(email) && u.password.equals(pass)) {
+                Intent i = new Intent(this, DashboardActivity.class);
+                i.putExtra("userName", u.name);
+                startActivity(i);
+                return;
+            }
         }
 
-        progress.setVisibility(View.VISIBLE);
-        AuthService authService = ApiClient.getClient(BASE_URL).create(AuthService.class);
-        LoginRequest req = new LoginRequest(email, password);
-        authService.login(req).enqueue(new Callback<LoginResponse>() {
-            @Override
-            public void onResponse(Call<LoginResponse> call, Response<LoginResponse> response) {
-                progress.setVisibility(View.GONE);
-                if (response.isSuccessful() && response.body() != null) {
-                    LoginResponse body = response.body();
-                    getSharedPreferences("SIS_PREF", MODE_PRIVATE)
-                            .edit()
-                            .putString("TOKEN", body.getToken())
-                            .putLong("USER_ID", body.getUserId())
-                            .putString("EMAIL", body.getEmail())
-                            .apply();
-
-                    startActivity(new Intent(LoginActivity.this, DashboardActivity.class));
-                    finish();
-                } else {
-                    String msg = "Login failed";
-                    try {
-                        if (response.errorBody() != null) {
-                            String err = response.errorBody().string();
-                            JSONObject j = new JSONObject(err);
-                            msg = j.optString("message", msg);
-                        }
-                    } catch (Exception e) { e.printStackTrace(); }
-                    Toast.makeText(LoginActivity.this, msg, Toast.LENGTH_LONG).show();
-                }
-            }
-
-            @Override
-            public void onFailure(Call<LoginResponse> call, Throwable t) {
-                progress.setVisibility(View.GONE);
-                Toast.makeText(LoginActivity.this, "Network error: " + t.getMessage(), Toast.LENGTH_LONG).show();
-            }
-        });
+        tvError.setText("Invalid email or password");
+        tvError.setVisibility(View.VISIBLE);
     }
 }
