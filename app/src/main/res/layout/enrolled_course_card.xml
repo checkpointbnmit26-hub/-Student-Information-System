@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:card_view="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    card_view:cardCornerRadius="10dp"
+    card_view:cardElevation="4dp"
+    android:foreground="?android:attr/selectableItemBackground">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="12dp"
+        android:background="@android:color/white">
+
+        <!-- small top accent -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="6dp"
+            android:background="@drawable/grad_blue" />
+
+        <TextView
+            android:id="@+id/tvCourseNameE"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Course Title"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:layout_marginTop="10dp"
+            android:textColor="@color/gray_800" />
+
+        <TextView
+            android:id="@+id/tvCourseDescE"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Short description here"
+            android:layout_marginTop="6dp"
+            android:textColor="@color/gray_600" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="8dp">
+
+            <TextView
+                android:id="@+id/tvStartDateE"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Start: 2025-01-10"
+                android:textSize="12sp"
+                android:textColor="@color/gray_600" />
+
+            <TextView
+                android:id="@+id/tvEndDateE"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="End: 2025-03-10"
+                android:textSize="12sp"
+                android:textColor="@color/gray_600" />
+        </LinearLayout>
+    </LinearLayout>
+</androidx.cardview.widget.CardView>
