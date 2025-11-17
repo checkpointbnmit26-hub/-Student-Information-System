@@ -13,4 +13,20 @@
         <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
         <!-- Customize your theme here. -->
     </style>
+
+    <style name="PortalCard">
+        <item name="android:background">@android:color/white</item>
+        <item name="android:padding">24dp</item>
+        <item name="android:elevation">8dp</item>
+        <item name="android:clipToOutline">true</item>
+    </style>
+
+    <style name="PortalButton">
+        <item name="android:background">@drawable/btn_blue_gradient</item>
+        <item name="android:textColor">@android:color/white</item>
+        <item name="android:padding">14dp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:gravity">center</item>
+    </style>
+
 </resources>
