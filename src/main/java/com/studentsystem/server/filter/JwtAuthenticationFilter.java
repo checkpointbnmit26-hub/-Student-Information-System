@@ -1,7 +1,6 @@
 package com.studentsystem.server.filter;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,6 +8,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource; // 1. IMPORT THIS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -20,7 +20,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
 
-@Component // Tells Spring to manage this class
+@Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Autowired
@@ -36,59 +36,51 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull FilterChain filterChain)
             throws ServletException, IOException {
 
-        // 1. Get the "Authorization" header from the request
         final String authHeader = request.getHeader("Authorization");
         final String jwt;
         final String userEmail;
 
-        // 2. Check if the header is missing or doesn't start with "Bearer "
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            // If so, pass the request to the next filter and exit
             filterChain.doFilter(request, response);
             return;
         }
 
-        // 3. Extract the token (the part after "Bearer ")
         jwt = authHeader.substring(7);
 
         try {
-            // 4. Validate the token
-            if (jwtUtil.validateToken(jwt)) {
+            // Use your JwtUtil to get the email from the token
+            userEmail = jwtUtil.parseToken(jwt).get("email", String.class);
+            
+            // Check if user is NOT already authenticated
+            if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 
-                // 5. Get the user's ID/email from the token
-                // We're using email as the "username"
-                userEmail = jwtUtil.parseToken(jwt).get("email", String.class); 
+                // 1. This line loads your user AND their "ROLE_ADMIN" authority
+                UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
                 
-                // 6. Check if the user is not already authenticated
-                if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                // 2. We double-check the token is valid (this is good practice)
+                if (jwtUtil.validateToken(jwt)) {
                     
-                    // 7. Load the user's details from our database
-                    UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
-                    
-                    // 8. Create the authentication object
+                    // 3. THIS IS THE FIX. We create a new session
+                    //    and correctly pass in userDetails.getAuthorities()
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userDetails,
-                        null, // We don't need credentials
-                        new ArrayList<>() // Empty authorities list for now
+                        null,
+                        userDetails.getAuthorities() // <-- THIS COPIES THE "ROLE_ADMIN"
                     );
                     
-                    // 9. Set the authenticated user in the Security Context
+                    authToken.setDetails(
+                        new WebAuthenticationDetailsSource().buildDetails(request)
+                    );
+                    
+                    // 4. Set the authenticated user in the Security Context
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
             }
         } catch (Exception e) {
-            // Token is invalid (expired, wrong signature, etc.)
-            // We just let the request continue without authentication.
-            // Spring Security will block it later if the endpoint is protected.
+            // If token is invalid, we do nothing. The request will fail later.
         }
 
-        // 10. Pass the request to the next filter
+        // 5. Pass the request to the next filter
         filterChain.doFilter(request, response);
-    }
-    
-    // Helper method to get user ID from token
-    private UUID getUserIdFromToken(String token) {
-        String subject = jwtUtil.parseToken(token).getSubject();
-        return UUID.fromString(subject);
     }
 }

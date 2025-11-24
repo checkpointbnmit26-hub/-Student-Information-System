@@ -17,6 +17,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Data
 @Entity
@@ -47,6 +48,7 @@ public class Course {
     private Integer enrolledCount = 0; // Set default
 
     // This is the FOREIGN KEY relationship to the 'users' table
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY) // 'Many' courses can be created by 'One' user
     @JoinColumn(name = "created_by", nullable = false)
     private User createdBy;

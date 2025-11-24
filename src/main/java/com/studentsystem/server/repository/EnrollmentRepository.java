@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import com.studentsystem.server.model.Enrollment;
+import com.studentsystem.server.model.enums.EnrollmentStatus; // Import this
 
 public interface EnrollmentRepository extends JpaRepository<Enrollment, UUID> {
     
@@ -12,4 +13,8 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, UUID> {
     
     // Find all enrollments for a specific course
     List<Enrollment> findByCourseId(UUID courseId);
+
+    // THIS IS THE NEW METHOD YOU NEED TO ADD
+    // Spring Data JPA will automatically create the query for it
+    List<Enrollment> findByStatus(EnrollmentStatus status);
 }

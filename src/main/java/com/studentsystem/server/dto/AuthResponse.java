@@ -1,12 +1,19 @@
 package com.studentsystem.server.dto;
 
-import java.util.UUID;
 import lombok.Data;
 
+/**
+ * CRITICAL UPDATE:
+ * This DTO now matches exactly what your frontend code expects:
+ * { "token": "...", "user": { ... } }
+ */
 @Data
 public class AuthResponse {
-    private String token; // The JWT token for authentication
-    private UUID userId;
-    private String name;
-    private String role;
+    private String token;
+    private UserResponse user; // A nested user object
+
+    public AuthResponse(String token, UserResponse user) {
+        this.token = token;
+        this.user = user;
+    }
 }

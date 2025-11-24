@@ -21,6 +21,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Data
 @Entity
@@ -38,16 +39,19 @@ public class Enrollment {
     // --- Relationships (Foreign Keys) ---
 
     // Link to the User (student)
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "student_id", nullable = false)
     private User student;
 
     // Link to the Course
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "course_id", nullable = false)
     private Course course;
 
     // Link to the User (admin who approved)
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "approved_by") // Nullable by default, which is correct
     private User approvedBy;
@@ -63,6 +67,9 @@ public class Enrollment {
 
     @Column(name = "approved_date")
     private OffsetDateTime approvedDate;
+
+    @Column(name = "enrolled_at")
+    private OffsetDateTime enrolledAt;
 
     // --- Timestamps ---
 

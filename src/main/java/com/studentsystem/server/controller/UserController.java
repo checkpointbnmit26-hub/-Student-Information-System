@@ -1,78 +1,90 @@
 package com.studentsystem.server.controller;
 
+import java.util.List;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping; // Import POST
-import org.springframework.web.bind.annotation.RequestBody; // Import RequestBody
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import com.studentsystem.server.dto.ProfileRequest; // Import the new DTO
+import com.studentsystem.server.dto.ProfileRequest;
+import com.studentsystem.server.dto.ResponseWrapper;
+import com.studentsystem.server.dto.UserResponse;
 import com.studentsystem.server.model.StudentProfile;
 import com.studentsystem.server.model.User;
 import com.studentsystem.server.repository.UserRepository;
-import com.studentsystem.server.service.UserService;
+import com.studentsystem.server.service.UserService; // Make sure this is imported
 
+/**
+ * CRITICAL UPDATE:
+ * All endpoints are now wrapped with ResponseWrapper as requested.
+ */
 @RestController
 @RequestMapping("/api/v1/users")
 public class UserController {
 
+    @Autowired // THIS WAS THE MISSING LINE
+    private UserService userService; 
+    
     @Autowired
-    private UserService userService;
+    private UserRepository userRepository;
 
-    @Autowired
-    private UserRepository userRepository; 
-
-    /**
-     * GET /api/v1/users/me
-     * Gets the profile of the currently authenticated user.
-     */
-    @GetMapping("/me")
-    public ResponseEntity<?> getMyProfile() {
-        
+    // Helper to get the currently logged-in user
+    private User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String userEmail = authentication.getName(); 
-
-        User currentUser = userRepository.findByEmail(userEmail);
-        if (currentUser == null) {
-            return ResponseEntity.status(404).body("User not found");
-        }
-
-        StudentProfile profile = userService.getUserProfile(currentUser.getId());
-        if (profile == null) {
-            return ResponseEntity.status(404).body("Profile not found. Please create one.");
-        }
-
-        return ResponseEntity.ok(profile);
+        return userRepository.findByEmail(userEmail);
     }
 
-    // --- NEW ENDPOINT ---
-    /**
-     * POST /api/v1/users/me/profile
-     * Creates or updates the profile for the currently logged-in user.
-     */
-    @PostMapping("/me/profile")
-    public ResponseEntity<?> createOrUpdateMyProfile(@RequestBody ProfileRequest profileRequest) {
-        
-        // 1. Get the current user (same as before)
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String userEmail = authentication.getName(); 
-        User currentUser = userRepository.findByEmail(userEmail);
-        
+    @GetMapping("/me")
+    public ResponseEntity<ResponseWrapper<UserResponse>> getMyProfile() {
+        User currentUser = getCurrentUser();
         if (currentUser == null) {
-            return ResponseEntity.status(401).body("User not authenticated");
+            return ResponseEntity.status(404).build();
         }
+        // Return user info (not profile)
+        UserResponse userResponse = new UserResponse();
+        userResponse.setId(currentUser.getId());
+        userResponse.setName(currentUser.getName());
+        userResponse.setEmail(currentUser.getEmail());
+        userResponse.setRole(currentUser.getRole());
+        userResponse.setPhone(currentUser.getPhone());
+        userResponse.setAddress(currentUser.getAddress());
+        return ResponseEntity.ok(new ResponseWrapper<>(userResponse));
+    }
 
-        // 2. Call the service to create or update the profile
-        try {
-            StudentProfile savedProfile = userService.createOrUpdateProfile(currentUser, profileRequest);
-            return ResponseEntity.ok(savedProfile); // Return the saved profile
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body("Error updating profile: " + e.getMessage());
+    @PostMapping("/me/profile")
+    public ResponseEntity<ResponseWrapper<StudentProfile>> createOrUpdateMyProfile(@RequestBody ProfileRequest profileRequest) {
+        User currentUser = getCurrentUser();
+        if (currentUser == null) {
+            return ResponseEntity.status(401).build();
         }
+        StudentProfile savedProfile = userService.createOrUpdateProfile(currentUser, profileRequest);
+        // Wrap the response
+        return ResponseEntity.ok(new ResponseWrapper<>(savedProfile));
+    }
+
+    @GetMapping("/me/profile")
+    public ResponseEntity<ResponseWrapper<StudentProfile>> getMyStudentProfile() {
+        User currentUser = getCurrentUser();
+        if (currentUser == null) {
+            return ResponseEntity.status(404).build();
+        }
+        StudentProfile profile = userService.getUserProfile(currentUser.getId());
+        if (profile == null) {
+            return ResponseEntity.status(404).build();
+        }
+        return ResponseEntity.ok(new ResponseWrapper<>(profile));
+    }
+
+    @GetMapping("/all")
+   
+    public ResponseEntity<ResponseWrapper<List<UserResponse>>> getAllUsers() {
+        // This line will now work
+        List<UserResponse> users = userService.getAllUsers(); 
+        // Wrap the response
+        return ResponseEntity.ok(new ResponseWrapper<>(users));
     }
 }
